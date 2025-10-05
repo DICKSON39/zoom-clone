@@ -1,34 +1,31 @@
-'use client'
+import { useEffect, useState } from 'react';
+import { Call, useStreamVideoClient } from '@stream-io/video-react-sdk';
 
-import { Call, useStreamVideoClient } from "@stream-io/video-react-sdk"
-import { useEffect, useState } from "react"
+export const useGetCallById = (id: string | string[]) => {
+  const [call, setCall] = useState<Call>();
+  const [isCallLoading, setIsCallLoading] = useState(true);
 
-export const useGetCallById = (id:string | string [] ) => {
-    const [call, setCall] = useState<Call>()
-    const [isCallLoading, setIdCallLoading] = useState(true)
+  const client = useStreamVideoClient();
 
+  useEffect(() => {
+    if (!client) return;
+    
+    const loadCall = async () => {
+      try {
+        // https://getstream.io/video/docs/react/guides/querying-calls/#filters
+        const { calls } = await client.queryCalls({ filter_conditions: { id } });
 
-    const client = useStreamVideoClient();
+        if (calls.length > 0) setCall(calls[0]);
 
-    useEffect(()=> {
-        if(!client) return;
+        setIsCallLoading(false);
+      } catch (error) {
+        console.error(error);
+        setIsCallLoading(false);
+      }
+    };
 
-        const loadCall= async () => {
-            const {calls} = await client.queryCalls({
-                filter_conditions: {
-                    id
-                }
-            })
+    loadCall();
+  }, [client, id]);
 
-            if(calls.length >0 ) setCall(calls[0]);
-
-            setIdCallLoading(false)
-
-        }
-
-        loadCall();
-
-    },[client,id])
-
-    return{call,isCallLoading}
-}
+  return { call, isCallLoading };
+};
