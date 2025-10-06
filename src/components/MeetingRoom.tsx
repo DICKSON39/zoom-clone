@@ -74,40 +74,63 @@ const MeetingRoom = () => {
   const channel = chatClient.channel("livestream", channelId || "default", {});
 
   // ... (handleSummarize function remains the same)
-  const handleSummarize = async () => {
-    if (!meetingNotes.trim()) {
-        toast("✍️ No notes to summarize!");
-        return;
+ const handleSummarize = async () => {
+  if (!meetingNotes.trim()) {
+    toast("✍️ No notes to summarize!");
+    return;
+  }
+
+  setIsSummarizing(true);
+  setSummaryText("");
+
+  try {
+    const res = await fetch("/api/summary", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text: meetingNotes }),
+    });
+
+    if (!res.ok) {
+      // --- START: Improved Error Handling ---
+      let errorText;
+      try {
+        // Try to read the response body as text (in case it's HTML/plain text error)
+        errorText = await res.text();
+      } catch (e) {
+        // If reading the body fails, just log the status
+        console.error(`API call failed with status: ${res.status}`);
+      }
+
+      console.error("Server Error Response:", errorText);
+
+      // Provide a generic, friendly toast to the user
+      toast("❌ Failed to generate summary. Check server logs or API key.");
+      
+      // Update state with a more informative message
+      setSummaryText(`Error: Could not generate summary. Status ${res.status}.`);
+
+      // Throw an error to halt the process (optional, but good practice)
+      throw new Error(`API call failed with status: ${res.status}`);
+      // --- END: Improved Error Handling ---
     }
 
-    setIsSummarizing(true);
-    setSummaryText("");
-    
-    try {
-        const res = await fetch("/api/summary", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ text: meetingNotes }),
-        });
-
-        if (!res.ok) {
-            throw new Error(`API call failed with status: ${res.status}`);
-        }
-
-        const data = await res.json();
-        setSummaryText(data.summary || "Failed to generate summary.");
-        toast("📄 Summary generated successfully!");
-    } catch (error) {
-        console.error("Summarization error:", error);
-        setSummaryText("Error: Could not generate summary.");
-        toast("❌ Failed to generate summary.");
-    } finally {
-        setIsSummarizing(false);
+    // Only attempt JSON parsing if the response status is OK (res.ok is true)
+    const data = await res.json();
+    setSummaryText(data.summary || "Failed to generate summary.");
+    toast("📄 Summary generated successfully!");
+  } catch (error) {
+    // This catches network errors or the error thrown above
+    console.error("Summarization fetch error:", error);
+    if (!summaryText.startsWith("Error:")) { // Avoid overwriting specific error status
+      setSummaryText("Error: An unknown network or client issue occurred.");
+      toast("❌ An unexpected error occurred.");
     }
-  };
-
+  } finally {
+    setIsSummarizing(false);
+  }
+};
 
   if (callingState !== CallingState.JOINED || !channel) return <Loader />; // Add channel check
 
