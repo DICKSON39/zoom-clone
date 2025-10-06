@@ -50,9 +50,7 @@ const PersonalRoom = () => {
       });
     }
 
-    // Copy invite link automatically
-    navigator.clipboard.writeText(meetingLink);
-    toast("Invite link copied ✅");
+    
 
     // Go to meeting
     router.push(`/meeting/${meetingId}?personal=true`);
