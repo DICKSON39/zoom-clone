@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -55,6 +54,7 @@ const CallList = ({ type }: { type: "ended" | "upcoming" | "recordings" }) => {
             
         } catch (error) {
             toast('No Recordings try again later')
+            console.log(error)
             
         }
         
