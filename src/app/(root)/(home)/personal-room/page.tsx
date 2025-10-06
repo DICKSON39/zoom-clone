@@ -28,16 +28,13 @@ const Table = ({
 const PersonalRoom = () => {
   const { user } = useUser();
   const meetingId = user?.id;
-   const meetingLink = `${process.env.NEXT_PUBLIC_BASE_URL}/meeting/${meetingId}?personal=true`
-   const client = useStreamVideoClient();
-   const router = useRouter();
+  const meetingLink = `${process.env.NEXT_PUBLIC_BASE_URL}/meeting/${meetingId}?personal=true`;
+  const client = useStreamVideoClient();
+  const router = useRouter();
 
-   console.log('Meeting link:', meetingLink);
+  const { call } = useGetCallById(meetingId!);
 
-
-   const {call} =useGetCallById(meetingId!);
-
-   const startRoom = async () => {
+  const startRoom = async () => {
   if (!client || !user) return;
 
   try {
@@ -50,7 +47,9 @@ const PersonalRoom = () => {
       });
     }
 
-    
+    // Copy invite link automatically
+    navigator.clipboard.writeText(meetingLink);
+    toast("Invite link copied ✅");
 
     // Go to meeting
     router.push(`/meeting/${meetingId}?personal=true`);
@@ -59,6 +58,7 @@ const PersonalRoom = () => {
     toast.error("Failed to start meeting. Try again.");
   }
 };
+
 
   return (
     <section className="flex size-full flex-col gap-10 text-white">
@@ -71,21 +71,18 @@ const PersonalRoom = () => {
       <div className="flex gap-2">
         <Button className="bg-[#0E78F9]" onClick={startRoom}>
           Start Meeting
-
         </Button>
 
         <Button
-  className="bg-[#252A41]"
-  disabled={!call}
-  onClick={() => {
-    navigator.clipboard.writeText(meetingLink);
-    toast('Link Copied');
-  }}
->
-  Copy Invitation
-</Button>
-
-
+          className="bg-[#252A41]"
+          disabled={!call}
+          onClick={() => {
+            navigator.clipboard.writeText(meetingLink);
+            toast("Link Copied");
+          }}
+        >
+          Copy Invitation
+        </Button>
       </div>
     </section>
   );
