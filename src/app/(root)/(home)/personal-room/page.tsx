@@ -37,28 +37,31 @@ const PersonalRoom = () => {
 
    const {call} =useGetCallById(meetingId!);
 
-   const startRoom = async ()=> {
+   const startRoom = async () => {
+  if (!client || !user) return;
 
-    if(!client || !user) return;
-
-    
-
-    if(!call) {
-      const newCall = client.call('default', meetingId!)
-
+  try {
+    if (!call) {
+      const newCall = client.call("default", meetingId!);
       await newCall.getOrCreate({
         data: {
           starts_at: new Date().toISOString(),
         },
       });
-
     }
-    router.push(`/meeting/${meetingId}?personal=true`)
 
-    
+    // Copy invite link automatically
+    navigator.clipboard.writeText(meetingLink);
+    toast("Invite link copied ✅");
 
+    // Go to meeting
+    router.push(`/meeting/${meetingId}?personal=true`);
+  } catch (error) {
+    console.error("Error starting meeting:", error);
+    toast.error("Failed to start meeting. Try again.");
+  }
+};
 
-   }
   return (
     <section className="flex size-full flex-col gap-10 text-white">
       <h1 className="text-3xl font-semibold"> Personal</h1>
