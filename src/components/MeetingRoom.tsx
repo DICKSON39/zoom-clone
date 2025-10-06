@@ -8,7 +8,7 @@ import {
   PaginatedGridLayout,
   SpeakerLayout,
   useCallStateHooks,
-  CallingState
+  CallingState,
   
 } from "@stream-io/video-react-sdk";
 import React, { useState } from "react";
@@ -23,6 +23,8 @@ import { LayoutList, Users } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import EndCallButton from "./EndCallButton";
 import Loader from "./Loader";
+import { toast } from "sonner"; // assuming you’re already using it
+import { Copy } from "lucide-react";
 
 type CallLayoutType = "grid" | "speaker-left" | "speaker-right";
 
@@ -33,6 +35,8 @@ const MeetingRoom = () => {
   const [showParticipants, setShowParticipants] = useState(false);
   const  {useCallCallingState} = useCallStateHooks();
   const router = useRouter();
+  const meetingId = searchParams.get("id"); // or however you’re passing it
+const inviteLink = `${process.env.NEXT_PUBLIC_BASE_URL}/meeting/${meetingId}`;
 
   const callingState = useCallCallingState();
 
@@ -67,41 +71,55 @@ const MeetingRoom = () => {
       </div>
 
       <div className="fixed bottom-0 flex w-full items-center justify-center gap-5 flex-wrap">
-        <CallControls onLeave={()=>router.push('/')} />
+  <CallControls onLeave={() => router.push('/')} />
 
-        <DropdownMenu>
-          <div className="flex items-center">
-            <DropdownMenuTrigger className="cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]">
-              <LayoutList size={20} className="text-white" />
-            </DropdownMenuTrigger>
-          </div>
+  <DropdownMenu>
+    <div className="flex items-center">
+      <DropdownMenuTrigger className="cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]">
+        <LayoutList size={20} className="text-white" />
+      </DropdownMenuTrigger>
+    </div>
 
-          <DropdownMenuContent className="border-[#1C1F2E] bg-[#1C1F2E] text-white">
-            {["Grid", "Speaker-left", "Speaker-right"].map((item, index) => (
-              <div key={index}>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => {
-                    setLayout(item.toLowerCase() as CallLayoutType);
-                  }}
-                >
-                  {item}
-                </DropdownMenuItem>
-              </div>
-            ))}
-            <DropdownMenuSeparator />
-          </DropdownMenuContent>
-        </DropdownMenu>
+    <DropdownMenuContent className="border-[#1C1F2E] bg-[#1C1F2E] text-white">
+      {["Grid", "Speaker-left", "Speaker-right"].map((item, index) => (
+        <div key={index}>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => {
+              setLayout(item.toLowerCase() as CallLayoutType);
+            }}
+          >
+            {item}
+          </DropdownMenuItem>
+        </div>
+      ))}
+      <DropdownMenuSeparator />
+    </DropdownMenuContent>
+  </DropdownMenu>
 
-        <CallStatsButton />
+  <CallStatsButton />
 
-        <button onClick={() => setShowParticipants((prev) => !prev)}>
-          <div className=" cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]  ">
-            <Users size={20} className="text-white" />
-          </div>
-        </button>
-        {!isPersonalRoom && <EndCallButton />}
-      </div>
+  {/* 👇 New "Copy Invite Link" button */}
+  <button
+    onClick={() => {
+      navigator.clipboard.writeText(inviteLink);
+      toast("✅ Invite link copied!");
+    }}
+    className="flex items-center gap-2 rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]"
+  >
+    <Copy size={18} className="text-white" />
+    <span>Copy Invite</span>
+  </button>
+
+  <button onClick={() => setShowParticipants((prev) => !prev)}>
+    <div className="cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]">
+      <Users size={20} className="text-white" />
+    </div>
+  </button>
+
+  {!isPersonalRoom && <EndCallButton />}
+</div>
+
     </section>
   );
 };
