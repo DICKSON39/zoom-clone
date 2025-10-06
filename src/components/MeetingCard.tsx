@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+
 import { Button } from "./ui/button";
 import { avatarImages } from "../../constants/index";
 
