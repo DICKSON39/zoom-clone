@@ -1,3 +1,6 @@
+
+"use client"
+
 import React, { ReactNode } from "react";
 import { StreamVideo, StreamVideoClient } from "@stream-io/video-react-sdk";
 import { useUser } from "@clerk/nextjs";
