@@ -32,6 +32,9 @@ const PersonalRoom = () => {
    const client = useStreamVideoClient();
    const router = useRouter();
 
+   console.log('Meeting link:', meetingLink);
+
+
    const {call} =useGetCallById(meetingId!);
 
    const startRoom = async ()=> {
@@ -70,13 +73,17 @@ const PersonalRoom = () => {
 
         </Button>
 
-        <Button className="bg-[#252A41]" onClick={()=> {
-          navigator.clipboard.writeText(meetingLink);
-          toast('Link Copied')
-        }}>
-          Copy Invitation
+        <Button
+  className="bg-[#252A41]"
+  disabled={!call}
+  onClick={() => {
+    navigator.clipboard.writeText(meetingLink);
+    toast('Link Copied');
+  }}
+>
+  Copy Invitation
+</Button>
 
-        </Button>
 
       </div>
     </section>
