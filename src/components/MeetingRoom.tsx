@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 "use client";
 import { cn } from "@/lib/utils";
 import {
@@ -20,7 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LayoutList, Users, Copy, FileText, MessageCircle } from "lucide-react"; // Added MessageCircle icon
+import { LayoutList, Users, Copy, FileText, MessageCircle } from "lucide-react"; // Copy is already imported
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import EndCallButton from "./EndCallButton";
 import Loader from "./Loader";
@@ -58,6 +58,7 @@ const MeetingRoom = () => {
   const router = useRouter();
   const { id: meetingId } = useParams();
 
+  // INVITE LINK IS HERE
   const inviteLink = `${process.env.NEXT_PUBLIC_BASE_URL}/meeting/${meetingId}`;
 
   const callingState = useCallCallingState();
@@ -67,7 +68,6 @@ const MeetingRoom = () => {
   const { client: chatClient } = useChatContext();
 
   // 4. Define the channel ID based on the meeting ID
-  // Stream Chat channel ID and Stream Video call ID should typically be the same
   const channelId = call?.id;
 
   // Use the chat client to get the channel
@@ -75,8 +75,39 @@ const MeetingRoom = () => {
 
   // ... (handleSummarize function remains the same)
   const handleSummarize = async () => {
-    /* ... existing logic ... */
+    if (!meetingNotes.trim()) {
+        toast("✍️ No notes to summarize!");
+        return;
+    }
+
+    setIsSummarizing(true);
+    setSummaryText("");
+    
+    try {
+        const res = await fetch("/api/summary", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ text: meetingNotes }),
+        });
+
+        if (!res.ok) {
+            throw new Error(`API call failed with status: ${res.status}`);
+        }
+
+        const data = await res.json();
+        setSummaryText(data.summary || "Failed to generate summary.");
+        toast("📄 Summary generated successfully!");
+    } catch (error) {
+        console.error("Summarization error:", error);
+        setSummaryText("Error: Could not generate summary.");
+        toast("❌ Failed to generate summary.");
+    } finally {
+        setIsSummarizing(false);
+    }
   };
+
 
   if (callingState !== CallingState.JOINED || !channel) return <Loader />; // Add channel check
 
@@ -151,15 +182,38 @@ const MeetingRoom = () => {
         )}
 
         <div className="flex w-full items-center justify-center gap-5 flex-wrap">
-          {/* ... (CallControls, DropdownMenu, CallStatsButton remain the same) ... */}
-
+          {/* CallControls */}
           <CallControls onLeave={() => router.push("/")} />
 
-          {/* ... (Layout Dropdown Menu) ... */}
+          {/* Layout Dropdown Menu */}
+          <DropdownMenu>
+            <div className="flex items-center">
+              <DropdownMenuTrigger className="cursor-pointer rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]">
+                <LayoutList size={20} className="text-white" />
+              </DropdownMenuTrigger>
+            </div>
 
+            <DropdownMenuContent className="border-[#1C1F2E] bg-[#1C1F2E] text-white">
+              {["Grid", "Speaker-left", "Speaker-right"].map((item, index) => (
+                <div key={index}>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setLayout(item.toLowerCase() as CallLayoutType);
+                    }}
+                  >
+                    {item}
+                  </DropdownMenuItem>
+                </div>
+              ))}
+              <DropdownMenuSeparator />
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* CallStatsButton */}
           <CallStatsButton />
 
-          {/* 3. Add Summarize button */}
+          {/* Summarize button */}
           <button
             onClick={handleSummarize}
             disabled={isSummarizing}
@@ -172,6 +226,18 @@ const MeetingRoom = () => {
           >
             <FileText size={18} className="text-white" />
             <span>{isSummarizing ? "Summarizing..." : "Summarize Notes"}</span>
+          </button>
+          
+          {/* 👇 NEW Copy Invite Link Button */}
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(inviteLink);
+              toast("✅ Invite link copied!");
+            }}
+            className="flex items-center gap-2 rounded-2xl bg-[#19232d] px-4 py-2 hover:bg-[#4c535b]"
+          >
+            <Copy size={18} className="text-white" />
+            <span>Copy Link</span>
           </button>
 
           {/* New Chat Toggle Button */}
@@ -188,7 +254,7 @@ const MeetingRoom = () => {
             </div>
           </button>
 
-          {/* ... (EndCallButton remains the same) ... */}
+          {/* EndCallButton */}
           {!isPersonalRoom && <EndCallButton />}
         </div>
       </div>
