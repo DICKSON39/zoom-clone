@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LayoutList, Users } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams,useParams } from "next/navigation";
 import EndCallButton from "./EndCallButton";
 import Loader from "./Loader";
 import { toast } from "sonner"; // assuming you’re already using it
@@ -35,7 +35,8 @@ const MeetingRoom = () => {
   const [showParticipants, setShowParticipants] = useState(false);
   const  {useCallCallingState} = useCallStateHooks();
   const router = useRouter();
-  const meetingId = searchParams.get("id"); // or however you’re passing it
+  const { id: meetingId } = useParams();
+ 
 const inviteLink = `${process.env.NEXT_PUBLIC_BASE_URL}/meeting/${meetingId}`;
 
   const callingState = useCallCallingState();
