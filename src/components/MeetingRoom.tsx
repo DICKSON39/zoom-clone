@@ -12,7 +12,7 @@ import {
   // 1. Import Stream Video Hooks for Channel ID
   useCall,
 } from "@stream-io/video-react-sdk";
-import React, { useState } from "react";
+import React, { useState,useRef,useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +37,12 @@ import {
 
 type CallLayoutType = "grid" | "speaker-left" | "speaker-right";
 
+
+
 const MeetingRoom = () => {
+
+  const audioRef = useRef<MediaStreamAudioSourceNode | null>(null);
+const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const searchParams = useSearchParams();
   const isPersonalRoom = !!searchParams.get("personal");
   const [layout, setLayout] = useState<CallLayoutType>("speaker-left");
@@ -53,6 +58,51 @@ const MeetingRoom = () => {
   const [meetingNotes] = useState(
     "The team discussed the Q3 marketing strategy. Key decisions included shifting focus from social media ads to influencer partnerships. Budget for the new campaign was approved at $50,000. Next steps: Sarah to contact the top three influencers, and John to finalize the creative assets. The next meeting is set for Friday to review progress."
   );
+
+
+  useEffect(() => {
+  async function startAudioCapture() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+
+    mediaRecorder.ondataavailable = async (e) => {
+      if (e.data.size > 0) {
+        const reader = new FileReader();
+        reader.readAsDataURL(e.data);
+        reader.onloadend = async () => {
+          const base64Audio = reader.result?.toString().split(",")[1];
+          if (!base64Audio) return;
+
+          // 1. Send to /api/transcribe
+          const res = await fetch("/api/transcribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ audioBase64: base64Audio }),
+          });
+          const data = await res.json();
+          const transcriptChunk = data.transcript;
+
+          if (transcriptChunk?.trim()) {
+            // 2. Send transcript chunk to /api/summary
+            const summaryRes = await fetch("/api/summary", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: transcriptChunk }),
+            });
+            const summaryData = await summaryRes.json();
+            setSummaryText(prev => prev + "\n" + summaryData.summary);
+          }
+        };
+      }
+    };
+
+    // record small chunks every 10 seconds
+    mediaRecorder.start(10000);
+  }
+
+  startAudioCapture();
+}, []);
 
   const { useCallCallingState } = useCallStateHooks();
   const router = useRouter();
